@@ -1,20 +1,79 @@
 # Reproducible Research: Peer Assessment 1
+**Written By: Mike Silva**  
 
+In this analysis I will answer the following questions:  
+1. What is mean total number of steps taken per day?  
+2. What is the average daily activity pattern?  
+3. Are there differences in activity patterns between weekdays and weekends?  
 
 ## Loading and preprocessing the data
-
-
+First we check for the zip archive in the working directory.  If it is not there, it is downloaded.  The data is loaded into the environment.
+```{r}
+temp <- "activity.zip"
+if(!file.exists(temp)){
+  download.file("http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip",temp)
+}
+data <- read.csv(unz(temp, "activity.csv"))
+```
+Now that we have the data let's check the structure:
+```{r}
+str(data)
+```
+The "date" variable is a factor instead of a date.  We need to change the type.
+```{r}
+data$date <- as.Date(data$date, "%Y-%m-%d");
+```
+Checking the structure once again we see:
+```{r}
+str(data)
+```
+"Date" is now a date.  Finally we will load the data into a data table object.
+```{r}
+library(data.table)
+data <- as.data.table(data)
+```
 
 ## What is mean total number of steps taken per day?
+To answer this question we must first agregate the data by the date.
+```{r}
+data.by.date <- data[,sum(steps), by="date"]
+setnames(data.by.date, "V1" ,"steps")
+```
+The following figure illustrates the distribution of the total number of steps taken each day.
+```{r}
+library(ggplot2)
+ggplot(data.by.date, aes(x=steps)) + geom_histogram(colour="black", fill="#fc9272", binwidth=1000) + geom_vline(aes(xintercept=mean(steps, na.rm=T)), color="#de2d26", linetype="dashed", size=1) + ggtitle("Figure 1: Total number of steps taken each day") + theme(plot.title=element_text(size=rel(1.25), lineheight=2, face="bold"))
+```
 
-
+The verticle red line in the above figure is the mean.  The mean and median are computed:
+```{r}
+mean(data.by.date$steps, na.rm=T)
+median(data.by.date$steps, na.rm=T)
+```
+The mean and median total number of steps taken per day are 10,766 and 10,765 respectively.
 
 ## What is the average daily activity pattern?
 
+Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+
+Which 5-minute interval, on average across all the days in the data set, contains the maximum number of steps?
 
 
 ## Imputing missing values
+Note that there are a number of days/intervals where there are missing values (coded as NA). The presence of missing days may introduce bias into some calculations or summaries of the data.
 
+Calculate and report the total number of missing values in the data set (i.e. the total number of rows with NAs)
+
+Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
+
+Create a new dataset that is equal to the original dataset but with the missing data filled in.
+
+Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+For this part the weekdays() function may be of some help here. Use the dataset with the filled-in missing values for this part.
+
+Create a new factor variable in the dataset with two levels - "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
+
+Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). The plot should look something like the following, which was creating using simulated data:
