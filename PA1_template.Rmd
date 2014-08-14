@@ -45,28 +45,26 @@ data <- as.data.table(data)
 
 ## What is mean total number of steps taken per day?
 
-To answer this question we must first agregate the data by the date.
+To answer this question we must first aggregate the data by the date.
 
 ```{r}
 data.by.date <- data[,sum(steps), by="date"]
 setnames(data.by.date, "V1" ,"steps")
 ```
 
-The following figure illustrates the distribution of the total number of steps taken each day.
+The following figure illustrates the distribution of the total number of steps taken each day.  The dashed red line represents the mean.
 
 ```{r}
 library(ggplot2)
 ggplot(data.by.date, aes(x=steps)) + geom_histogram(colour="black", fill="#fc9272", binwidth=1000) + geom_vline(aes(xintercept=mean(steps, na.rm=T)), color="#de2d26", linetype="dashed", size=1) + ggtitle("Figure 1: Total number of steps taken each day") + xlab("Total Steps per Day") + ylab("Count") + theme(plot.title=element_text(size=rel(1.25), lineheight=2, face="bold"))
 ```
 
-The verticle red line in the above figure is the mean.  The mean and median are computed:
+The mean and median total number of steps taken per day are **10,766** and **10,765** respectively as computed below:
 
 ```{r}
 mean(data.by.date$steps, na.rm=T)
 median(data.by.date$steps, na.rm=T)
 ```
-
-The mean and median total number of steps taken per day are **10,766** and **10,765** respectively.
 
 ## What is the average daily activity pattern?
 
@@ -77,7 +75,7 @@ data.by.interval <- data[,mean(steps, na.rm=T), by="interval"]
 setnames(data.by.interval,"V1","avg.steps")
 ```
 
-We then created a timeseries plot to visualize the data:
+We then created a time series plot to visualize the data:
 
 ```{r}
 ggplot(data=data.by.interval, aes(x=interval, y=avg.steps)) + geom_line() + xlab("5-Minute Interval") + ylab("Average Number of Steps") + ggtitle("Figure 2: Average number of steps across all days by interval") + theme(plot.title=element_text(size=rel(1.25), lineheight=2, face="bold"))
@@ -96,16 +94,16 @@ data.by.interval[data.by.interval$avg.steps == max(data.by.interval$avg.steps),]
 Interval **835** had the maximum number of steps (about 206).
 
 ## Imputing missing values
+
 When observing the data there are a number of days/intervals where there are missing values (coded as NA).
 
 ``` {r}
-summary(data)
+summary(data$steps)
 ```
 
 **2,304** observations are missing data.  I will fill in these observations with the mean number of steps for the given 5 minute interval.
 
 ```{r}
-## Hat tip to http://stackoverflow.com/questions/9322773/how-to-replace-na-with-mean-by-subset-in-r-impute-with-plyr
 library(plyr)
 impute.mean <- function(x) replace(x, is.na(x), mean(x, na.rm = TRUE))
 imputed.data <- ddply(data, ~ interval, transform, steps = impute.mean(steps))
@@ -114,7 +112,7 @@ imputed.data <- ddply(data, ~ interval, transform, steps = impute.mean(steps))
 Now we check to see if there are no NA's
 
 ```{r}
-summary(imputed.data)
+summary(imputed.data$steps)
 ```
 
 Now we want to see a histogram of the total number of steps taken each day.  To do this we need to first aggregate the data by date:
@@ -125,7 +123,7 @@ imputed.data.by.date <- imputed.data[,sum(steps), by="date"]
 setnames(imputed.data.by.date, "V1" ,"steps")
 ```
 
-Now we can plot the histogram:
+Now we can plot the histogram.  This time it is in blue and the dashed blue line represents the mean:
 
 ```{r}
 ggplot(imputed.data.by.date, aes(x=steps)) + geom_histogram(colour="black", fill="#9ecae1", binwidth=1000) + geom_vline(aes(xintercept=mean(steps, na.rm=T)), color="#3182bd", linetype="dashed", size=1) + ggtitle("Figure 3: Total number of steps taken each day") + xlab("Total Steps per Day") + ylab("Count") + theme(plot.title=element_text(size=rel(1.25), lineheight=2, face="bold"))
@@ -133,23 +131,18 @@ ggplot(imputed.data.by.date, aes(x=steps)) + geom_histogram(colour="black", fill
 
 ### Do these values differ from the first estimates?
 
-As you may recall the mean and median total number of steps taken per day, without imputation, are **10,766** and **10,765** respectively.
-
-```{r}
-mean(data.by.date$steps, na.rm=T)
-median(data.by.date$steps, na.rm=T)
-```
-
-Once the missing data was filled with imputed values the mean and median total number of steps taken per day, are **both 10,766**
+As you may recall the mean and median total number of steps taken per day, without imputation, are **10,766** and **10,765** respectively.  Once the missing data was filled with imputed values the mean and median total number of steps taken per day, are **both 10,766**
 
 ```{r}
 mean(imputed.data.by.date$steps)
 median(imputed.data.by.date$steps)
 ```
 
+So do these values differ?  The answer is no for the mean and yes for the median.
+
 ### What is the impact of imputing missing data on the estimates of the total daily number of steps?
 
-By imputing values using the mean, we are reinforced the trends that existed in the data.  Here's another way of looking at it:
+By imputing values using the mean, we are reinforced the trends that existed in the data.  This is observed when overlaying the two histograms:
 
 ```{r}
 data.by.date$imputed <- "No"
@@ -160,7 +153,7 @@ ggplot(histogram.data, aes(x=steps, fill=imputed)) + geom_histogram(colour="blac
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
-We will be using the dataset with imputed values for this analysis.  First we determine if the day was a weekday or a weekend:
+We will be using the data set with imputed values for this analysis.  First we determine if the day was a weekday or a weekend:
 
 ```{r}
 imputed.data$day.of.week <- 'Weekday'
@@ -177,16 +170,16 @@ imputed.data.by.interval <- imputed.data[,mean(steps, na.rm=T), by="interval,day
 setnames(imputed.data.by.interval,"V1","avg.steps")
 ```
 
-We then created a timeseries plot to visualize the data:
+We then created a time series plot to visualize the data:
 
 ```{r}
 ggplot(data=imputed.data.by.interval, aes(x=interval, y=avg.steps, color=day.of.week)) + geom_line() + facet_grid(day.of.week ~ .) + xlab("5-Minute Interval") + ylab("Average Number of Steps") + ggtitle("Figure 5: Average number of steps by interval and day of the week") + theme(plot.title=element_text(size=rel(1.25), lineheight=2, face="bold")) + guides(color=FALSE)
 ```
 
-A few things stick out when comparing the two lines.  The weekend line increases latter and decreases latter.  This suggests that people sleep in and stay up latter on the weekend.  The weekend also has more steps in the afternoon than the weekday. The weekdays have the most steps.
+A few differences stick out when comparing the two lines.  The weekend line increases latter and decreases latter.  This suggests that people sleep in and stay up latter on the weekend.  The weekend also has more steps in the afternoon than the weekday. The weekdays have the most steps.
 
 ``` {r}
 by(imputed.data.by.interval$avg.steps, imputed.data.by.interval$day.of.week, summary)
 ```
 
-The weekday average number of steps is about **36** while the weekend is abour **42**.
+The weekday average number of steps is about **36** while the weekend is about **42**.
