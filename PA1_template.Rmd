@@ -87,7 +87,7 @@ We see that there are very few steps util about the 500th 5-minute interval.  Th
 
 ### Which 5-minute interval, on average across all the days in the data set, contains the maximum number of steps?  
 
-To get a more precise answer I subset the data by interval pulling out the observation with the maximum average steps:
+To get a more precise answer we subset the data by interval pulling out the observation with the maximum average steps:
 
 ```{r}
 data.by.interval[data.by.interval$avg.steps == max(data.by.interval$avg.steps),]
@@ -149,9 +149,8 @@ median(imputed.data.by.date$steps)
 
 ### What is the impact of imputing missing data on the estimates of the total daily number of steps?
 
-<!--By imputing values using the mean, I reinforced the structures in the data.-->
+By imputing values using the mean, we are reinforced the trends that existed in the data.  Here's another way of looking at it:
 
-Another way of looking at it
 ```{r}
 data.by.date$imputed <- "No"
 imputed.data.by.date$imputed <- "Yes"
@@ -160,8 +159,34 @@ ggplot(histogram.data, aes(x=steps, fill=imputed)) + geom_histogram(colour="blac
 ```
 
 ## Are there differences in activity patterns between weekdays and weekends?
-For this part the weekdays() function may be of some help here. Use the dataset with the filled-in missing values for this part.
 
-Create a new factor variable in the dataset with two levels - "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
+We will be using the dataset with imputed values for this analysis.  First we determine if the day was a weekday or a weekend:
 
-Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). The plot should look something like the following, which was creating using simulated data:
+```{r}
+imputed.data$day.of.week <- 'Weekday'
+imputed.data[weekdays(imputed.data$date)=="Sunday" | weekdays(imputed.data$date)=="Saturday",4] <- 'Weekend'
+
+table(imputed.data$day.of.week)
+```
+
+There are 12,960 weekday and 4,608 weekend observations in the data set.  
+To explore this question we first have to aggregate the data by 5-minute intervals.  
+
+``` {r}
+imputed.data.by.interval <- imputed.data[,mean(steps, na.rm=T), by="interval,day.of.week"]
+setnames(imputed.data.by.interval,"V1","avg.steps")
+```
+
+We then created a timeseries plot to visualize the data:
+
+```{r}
+ggplot(data=imputed.data.by.interval, aes(x=interval, y=avg.steps, color=day.of.week)) + geom_line() + facet_grid(day.of.week ~ .) + xlab("5-Minute Interval") + ylab("Average Number of Steps") + ggtitle("Figure 5: Average number of steps by interval and day of the week") + theme(plot.title=element_text(size=rel(1.25), lineheight=2, face="bold")) + guides(color=FALSE)
+```
+
+A few things stick out when comparing the two lines.  The weekend line increases latter and decreases latter.  This suggests that people sleep in and stay up latter on the weekend.  The weekend also has more steps in the afternoon than the weekday. The weekdays have the most steps.
+
+``` {r}
+by(imputed.data.by.interval$avg.steps, imputed.data.by.interval$day.of.week, summary)
+```
+
+The weekday average number of steps is about **36** while the weekend is abour **42**.
